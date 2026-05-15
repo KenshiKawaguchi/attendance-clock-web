@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "勤怠打刻",
+  title: "勤怠管理デモ",
   description: "レスポンシブ対応の勤怠打刻画面",
 };
 
