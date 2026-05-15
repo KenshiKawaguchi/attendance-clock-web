@@ -359,21 +359,12 @@ function ClockPanel({ now }: { now: Date }) {
       </p>
       <div
         suppressHydrationWarning
-        className="mt-3 flex items-baseline justify-center gap-2 font-mono text-[#ff9d1c] [font-variant-numeric:tabular-nums] sm:gap-4"
+        className="mt-3 flex items-baseline justify-center gap-3 font-mono text-[#ff9d1c] [font-variant-numeric:tabular-nums] sm:gap-5"
       >
-        <span className="w-[2ch] text-right text-7xl font-light leading-none sm:text-8xl md:text-9xl lg:text-[9.5rem]">
-          {time.hour}
-        </span>
-        <span className="text-6xl font-light leading-none sm:text-8xl md:text-9xl lg:text-[8.5rem]">
-          :
-        </span>
-        <span className="w-[2ch] text-right text-7xl font-light leading-none sm:text-8xl md:text-9xl lg:text-[9.5rem]">
-          {time.minute}
+        <span className="text-7xl font-light leading-none sm:text-8xl md:text-9xl lg:text-[9.5rem]">
+          {time.hour}:{time.minute}
         </span>
         <span className="text-4xl font-light leading-none sm:text-5xl md:text-6xl">
-          :
-        </span>
-        <span className="w-[2ch] text-right text-4xl font-light leading-none sm:text-5xl md:text-6xl">
           {time.second}
         </span>
       </div>
@@ -460,8 +451,10 @@ export default function Home() {
         </header>
 
         {!isClockScreen ? (
-          <section className="grid flex-1 place-items-center py-4">
-            <div className="grid w-full max-w-5xl gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-center">
+          <section className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.8fr)_minmax(300px,0.65fr)] xl:grid-cols-[minmax(0,2fr)_minmax(340px,0.7fr)]">
+            <div className="flex min-w-0 flex-col gap-4">
+              <ClockPanel now={now} />
+
               <section className="space-y-5">
                 <div className="space-y-2">
                   <label
@@ -478,19 +471,26 @@ export default function Home() {
                     onChange={(event) =>
                       dispatch({ type: "setEmployeeCode", value: event.target.value })
                     }
-                    className="w-full rounded border-2 border-emerald-700 bg-emerald-50/90 px-4 py-4 text-center text-4xl font-semibold tracking-[0.2em] outline-none focus:border-zinc-950 sm:text-6xl"
+                    className="w-full max-w-md rounded border-2 border-emerald-700 bg-emerald-50/90 px-4 py-3 text-center text-3xl font-semibold tracking-[0.2em] outline-none focus:border-zinc-950 sm:text-4xl"
                     placeholder="7桁"
                     autoFocus
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <p className="text-xl font-semibold sm:text-2xl">氏名</p>
+                  <p className="min-h-12 text-2xl font-semibold sm:text-3xl" />
+                </div>
+
                 {state.message ? (
-                  <p className="rounded bg-white/70 px-4 py-3 text-base font-semibold text-zinc-900 shadow-sm sm:text-lg">
+                  <p className="max-w-2xl rounded bg-white/70 px-4 py-3 text-base font-semibold text-zinc-900 shadow-sm sm:text-lg">
                     {state.message}
                   </p>
                 ) : null}
               </section>
+            </div>
 
+            <div className="flex justify-center lg:justify-start">
               <Keypad
                 digitDisabled={state.employeeCode.length >= 7}
                 onDigit={(digit) => dispatch({ type: "appendDigit", digit })}
