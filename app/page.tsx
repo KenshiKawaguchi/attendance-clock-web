@@ -21,6 +21,7 @@ type AttendanceRecord = {
 
 type State = {
   employeeCode: string;
+  isCodeSubmitted: boolean;
   records: AttendanceRecord[];
   message: string;
   showTodayRecords: boolean;
@@ -32,6 +33,7 @@ type Action =
   | { type: "backspace" }
   | { type: "clearInput" }
   | { type: "setEmployeeCode"; value: string }
+  | { type: "submitCode" }
   | { type: "clockIn"; at: Date }
   | { type: "clockOut"; at: Date }
   | { type: "goOut"; at: Date }
@@ -45,6 +47,7 @@ const EMPLOYEE_NAME_PLACEHOLDER = "未登録";
 
 const initialState: State = {
   employeeCode: "",
+  isCodeSubmitted: false,
   records: [],
   message: "",
   showTodayRecords: true,
@@ -59,33 +62,44 @@ function dateKey(date: Date) {
   }).format(date);
 }
 
-function displayDate(date: Date | null) {
-  if (!date) return "---- 年 -- 月 -- 日 (-)";
-
-  return new Intl.DateTimeFormat("ja-JP", {
-    timeZone: "Asia/Tokyo",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "short",
-  }).format(date);
-}
-
-function displayLargeTime(date: Date | null) {
-  if (!date) return { hour: "--", minute: "--", second: "--" };
-
+function getTokyoParts(date: Date) {
   const parts = new Intl.DateTimeFormat("ja-JP", {
     timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-    hour12: false,
+    hourCycle: "h23",
   }).formatToParts(date);
 
+  const find = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+
   return {
-    hour: parts.find((part) => part.type === "hour")?.value ?? "--",
-    minute: parts.find((part) => part.type === "minute")?.value ?? "--",
-    second: parts.find((part) => part.type === "second")?.value ?? "--",
+    year: find("year"),
+    month: find("month").replace(/^0/, ""),
+    day: find("day").replace(/^0/, ""),
+    weekday: find("weekday"),
+    hour: find("hour"),
+    minute: find("minute"),
+    second: find("second"),
+  };
+}
+
+function displayDate(date: Date) {
+  const parts = getTokyoParts(date);
+  return `${parts.year} 年 ${parts.month} 月 ${parts.day} 日 (${parts.weekday})`;
+}
+
+function displayLargeTime(date: Date) {
+  const parts = getTokyoParts(date);
+  return {
+    hour: parts.hour || "--",
+    minute: parts.minute || "--",
+    second: parts.second || "--",
   };
 }
 
@@ -163,6 +177,7 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         employeeCode: `${state.employeeCode}${action.digit}`,
+        isCodeSubmitted: false,
         message: "",
       };
 
@@ -170,6 +185,7 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         employeeCode: state.employeeCode.slice(0, -1),
+        isCodeSubmitted: false,
         message: "",
       };
 
@@ -177,6 +193,7 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         employeeCode: "",
+        isCodeSubmitted: false,
         message: "入力をクリアしました。保存済みの打刻履歴は残っています。",
       };
 
@@ -184,6 +201,20 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         employeeCode: action.value.replace(/\D/g, "").slice(0, 7),
+        isCodeSubmitted: false,
+        message: "",
+      };
+
+    case "submitCode":
+      if (state.employeeCode.length !== 7) {
+        return {
+          ...state,
+          message: "従業員コードを7桁で入力してください。",
+        };
+      }
+      return {
+        ...state,
+        isCodeSubmitted: true,
         message: "",
       };
 
@@ -328,18 +359,21 @@ function ClockPanel({ now }: { now: Date }) {
       </p>
       <div
         suppressHydrationWarning
-        className="mx-auto mt-3 grid w-fit grid-cols-[2ch_auto_2ch_2ch] items-end justify-center gap-x-2 font-mono text-[#ff9d1c] [font-variant-numeric:tabular-nums] sm:gap-x-4"
+        className="mx-auto mt-3 grid w-fit grid-cols-[2ch_0.45ch_2ch_0.45ch_2ch] items-end justify-center gap-x-1 font-mono text-[#ff9d1c] [font-variant-numeric:tabular-nums] sm:gap-x-3"
       >
-        <span className="text-right text-7xl font-light leading-none sm:text-8xl md:text-9xl lg:text-[10rem]">
+        <span className="text-right text-7xl font-light leading-none sm:text-8xl md:text-9xl lg:text-[9.5rem]">
           {time.hour}
         </span>
-        <span className="pb-[0.16em] text-6xl font-light leading-none sm:text-8xl md:text-9xl lg:text-[9rem]">
+        <span className="pb-[0.1em] text-center text-6xl font-light leading-none sm:text-8xl md:text-9xl lg:text-[8.5rem]">
           :
         </span>
-        <span className="text-right text-7xl font-light leading-none sm:text-8xl md:text-9xl lg:text-[10rem]">
+        <span className="text-right text-7xl font-light leading-none sm:text-8xl md:text-9xl lg:text-[9.5rem]">
           {time.minute}
         </span>
-        <span className="pb-[0.22em] text-right text-4xl font-light leading-none sm:text-5xl md:text-6xl">
+        <span className="pb-[0.18em] text-center text-4xl font-light leading-none sm:text-5xl md:text-6xl">
+          :
+        </span>
+        <span className="pb-[0.18em] text-right text-4xl font-light leading-none sm:text-5xl md:text-6xl">
           {time.second}
         </span>
       </div>
@@ -412,6 +446,7 @@ export default function Home() {
   );
   const status = getStatus(currentRecord);
   const isCodeReady = state.employeeCode.length === 7;
+  const isClockScreen = state.isCodeSubmitted && isCodeReady;
   const todayRecords = useMemo(
     () => state.records.filter((record) => record.date === today),
     [state.records, today],
@@ -424,7 +459,7 @@ export default function Home() {
           {STORE_NAME}
         </header>
 
-        {!isCodeReady ? (
+        {!isClockScreen ? (
           <section className="grid flex-1 place-items-center py-4">
             <div className="grid w-full max-w-5xl gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-center">
               <section className="space-y-5">
@@ -460,7 +495,7 @@ export default function Home() {
                 digitDisabled={state.employeeCode.length >= 7}
                 onDigit={(digit) => dispatch({ type: "appendDigit", digit })}
                 onBackspace={() => dispatch({ type: "backspace" })}
-                onNext={() => undefined}
+                onNext={() => dispatch({ type: "submitCode" })}
               />
             </div>
           </section>
@@ -541,7 +576,7 @@ export default function Home() {
 
                   {status !== "finished" ? (
                     <ActionButton onClick={() => dispatch({ type: "clearInput" })}>
-                      番号変更
+                      クリア
                     </ActionButton>
                   ) : null}
                 </div>
