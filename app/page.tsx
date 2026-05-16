@@ -44,6 +44,7 @@ type Action =
   | { type: "hydrate"; records: AttendanceRecord[] }
   | { type: "appendDigit"; digit: string }
   | { type: "backspace" }
+  | { type: "clearCode" }
   | { type: "clearInput" }
   | { type: "setEmployeeCode"; value: string }
   | { type: "submitCode" }
@@ -210,6 +211,14 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         employeeCode: state.employeeCode.slice(0, -1),
+        isCodeSubmitted: false,
+        message: "",
+      };
+
+    case "clearCode":
+      return {
+        ...state,
+        employeeCode: "",
         isCodeSubmitted: false,
         message: "",
       };
@@ -588,7 +597,7 @@ export default function Home() {
               <Keypad
                 digitDisabled={state.employeeCode.length >= 7}
                 onDigit={(digit) => dispatch({ type: "appendDigit", digit })}
-                onBackspace={() => dispatch({ type: "backspace" })}
+                onBackspace={() => dispatch({ type: "clearCode" })}
                 onNext={() => dispatch({ type: "submitCode" })}
               />
             </div>
