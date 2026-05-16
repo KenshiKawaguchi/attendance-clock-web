@@ -26,12 +26,18 @@ type AttendanceRecord = {
   clockOut?: string;
 };
 
+type StampModal = {
+  time: string;
+  message: string;
+};
+
 type State = {
   employeeCode: string;
   isCodeSubmitted: boolean;
   records: AttendanceRecord[];
   message: string;
   showTodayRecords: boolean;
+  stampModal: StampModal | null;
 };
 
 type Action =
@@ -46,7 +52,8 @@ type Action =
   | { type: "goOut"; at: Date }
   | { type: "returnBack"; at: Date }
   | { type: "confirm" }
-  | { type: "showTodayRecords" };
+  | { type: "showTodayRecords" }
+  | { type: "closeStampModal" };
 
 const STORAGE_KEY = "attendance-clock-v1-records";
 const STORE_NAME = "浜松和合店";
@@ -58,6 +65,7 @@ const initialState: State = {
   records: [],
   message: "",
   showTodayRecords: true,
+  stampModal: null,
 };
 
 function dateKey(date: Date) {
@@ -119,6 +127,11 @@ function displayTime(value?: string) {
     minute: "2-digit",
     hour12: false,
   }).format(new Date(value));
+}
+
+function displayStampTime(date: Date) {
+  const parts = getTokyoParts(date);
+  return `${parts.hour}:${parts.minute}:${parts.second}`;
 }
 
 function displayDuration(record?: AttendanceRecord) {
@@ -239,6 +252,10 @@ function reducer(state: State, action: Action): State {
           clockIn: record.clockIn ?? action.at.toISOString(),
         })),
         message: "出勤を記録しました。",
+        stampModal: {
+          time: displayStampTime(action.at),
+          message: "出勤しました",
+        },
       };
 
     case "goOut":
@@ -253,6 +270,10 @@ function reducer(state: State, action: Action): State {
               : [...record.outings, { out: action.at.toISOString() }],
         })),
         message: "外出を記録しました。",
+        stampModal: {
+          time: displayStampTime(action.at),
+          message: "外出しました",
+        },
       };
 
     case "returnBack":
@@ -268,6 +289,10 @@ function reducer(state: State, action: Action): State {
           ),
         })),
         message: "戻りを記録しました。",
+        stampModal: {
+          time: displayStampTime(action.at),
+          message: "外出戻りしました",
+        },
       };
 
     case "clockOut":
@@ -280,6 +305,10 @@ function reducer(state: State, action: Action): State {
         })),
         message: "退勤を記録しました。",
         showTodayRecords: true,
+        stampModal: {
+          time: displayStampTime(action.at),
+          message: "退勤しました",
+        },
       };
 
     case "confirm":
@@ -290,6 +319,15 @@ function reducer(state: State, action: Action): State {
         ...state,
         showTodayRecords: true,
         message: "当日の打刻を表示しています。",
+      };
+
+    case "closeStampModal":
+      return {
+        ...state,
+        employeeCode: "",
+        isCodeSubmitted: false,
+        message: "",
+        stampModal: null,
       };
   }
 }
@@ -358,6 +396,37 @@ function ActionButton({
     >
       {children}
     </button>
+  );
+}
+
+function StampCompleteModal({
+  modal,
+  onClose,
+}: {
+  modal: StampModal;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-700/60 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="打刻完了"
+    >
+      <div className="w-full max-w-md rounded bg-zinc-200/60 px-6 py-7 text-center text-zinc-950 shadow-2xl backdrop-blur-sm sm:px-8">
+        <p className="font-mono text-4xl font-semibold [font-variant-numeric:tabular-nums] sm:text-5xl">
+          {modal.time}
+        </p>
+        <p className="mt-6 text-2xl font-bold sm:text-3xl">{modal.message}</p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-7 min-h-14 min-w-36 rounded border border-zinc-500 bg-zinc-100/60 px-8 py-3 text-xl font-semibold text-zinc-950 shadow-[0_2px_5px_rgba(0,0,0,0.25)] transition active:translate-y-px"
+        >
+          閉じる
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -712,6 +781,12 @@ export default function Home() {
           </section>
         )}
       </div>
+      {state.stampModal ? (
+        <StampCompleteModal
+          modal={state.stampModal}
+          onClose={() => dispatch({ type: "closeStampModal" })}
+        />
+      ) : null}
     </main>
   );
 }
