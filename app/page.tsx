@@ -443,7 +443,7 @@ function ClockPanel({ now }: { now: Date }) {
       </p>
       <div
         suppressHydrationWarning
-        className="mt-3 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-baseline justify-center gap-3 text-center text-[#ff9d1c] [font-family:var(--font-clock),Arial,sans-serif] [font-variant-numeric:tabular-nums] sm:gap-5"
+        className="mt-3 grid grid-cols-[max-content_max-content_max-content] items-baseline justify-center gap-4 text-center text-[#ff9d1c] [font-family:var(--font-clock),Arial,sans-serif] [font-variant-numeric:tabular-nums] sm:gap-6"
       >
         <span className="text-7xl font-light leading-none sm:text-8xl md:text-9xl lg:text-[9.5rem]">
           {time.hour}
