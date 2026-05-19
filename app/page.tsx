@@ -1006,7 +1006,7 @@ export default function Home() {
 
               <section className="space-y-5">
                 <div className="space-y-2">
-                  <p className="text-xl font-semibold sm:text-2xl">氏名</p>
+                  <p className="text-xl font-semibold sm:text-2xl">従業員コード</p>
                   <p className="min-h-12 text-2xl font-semibold sm:text-3xl">
                     {EMPLOYEE_NAME_PLACEHOLDER}
                   </p>
@@ -1022,53 +1022,53 @@ export default function Home() {
             <section>
               {state.showTodayRecords ? (
                 <div className="overflow-x-auto">
-                  <table className="min-w-[980px] border-collapse bg-white text-center text-sm shadow-md sm:text-base">
+                  <table className="min-w-[980px] border-2 border-black border-collapse bg-white text-center text-sm shadow-md sm:text-base">
                     <thead>
                       <tr className="bg-[#d92913] text-white">
-                        <th className="border border-zinc-500 px-3 py-2">出勤日</th>
-                        <th className="border border-zinc-500 px-3 py-2">出勤</th>
-                        <th className="border border-zinc-500 px-3 py-2">外出1</th>
-                        <th className="border border-zinc-500 px-3 py-2">戻り1</th>
-                        <th className="border border-zinc-500 px-3 py-2">外出2</th>
-                        <th className="border border-zinc-500 px-3 py-2">戻り2</th>
-                        <th className="border border-zinc-500 px-3 py-2">外出3</th>
-                        <th className="border border-zinc-500 px-3 py-2">戻り3</th>
-                        <th className="border border-zinc-500 px-3 py-2">退勤</th>
-                        <th className="border border-zinc-500 px-3 py-2">時間</th>
+                        <th className="border-2 border-black px-3 py-2">出勤日</th>
+                        <th className="border-2 border-black px-3 py-2">出勤</th>
+                        <th className="border-2 border-black px-3 py-2">外出1</th>
+                        <th className="border-2 border-black px-3 py-2">戻り1</th>
+                        <th className="border-2 border-black px-3 py-2">外出2</th>
+                        <th className="border-2 border-black px-3 py-2">戻り2</th>
+                        <th className="border-2 border-black px-3 py-2">外出3</th>
+                        <th className="border-2 border-black px-3 py-2">戻り3</th>
+                        <th className="border-2 border-black px-3 py-2">退勤</th>
+                        <th className="border-2 border-black px-3 py-2">時間</th>
                       </tr>
                     </thead>
                     <tbody>
                       {todayRecords.length > 0 ? (
                         todayRecords.map((record) => (
                           <tr key={record.id}>
-                            <td className="border border-zinc-400 px-3 py-2">
+                            <td className="border-2 border-black px-3 py-2">
                               {record.date.replaceAll("-", "/")}
                             </td>
-                            <td className="border border-zinc-400 px-3 py-2">
+                            <td className="border-2 border-black px-3 py-2">
                               {displayTime(record.clockIn)}
                             </td>
-                            <td className="border border-zinc-400 px-3 py-2">
+                            <td className="border-2 border-black px-3 py-2">
                               {displayTime(record.outings[0]?.out)}
                             </td>
-                            <td className="border border-zinc-400 px-3 py-2">
+                            <td className="border-2 border-black px-3 py-2">
                               {displayTime(record.outings[0]?.back)}
                             </td>
-                            <td className="border border-zinc-400 px-3 py-2">
+                            <td className="border-2 border-black px-3 py-2">
                               {displayTime(record.outings[1]?.out)}
                             </td>
-                            <td className="border border-zinc-400 px-3 py-2">
+                            <td className="border-2 border-black px-3 py-2">
                               {displayTime(record.outings[1]?.back)}
                             </td>
-                            <td className="border border-zinc-400 px-3 py-2">
+                            <td className="border-2 border-black px-3 py-2">
                               {displayTime(record.outings[2]?.out)}
                             </td>
-                            <td className="border border-zinc-400 px-3 py-2">
+                            <td className="border-2 border-black px-3 py-2">
                               {displayTime(record.outings[2]?.back)}
                             </td>
-                            <td className="border border-zinc-400 px-3 py-2">
+                            <td className="border-2 border-black px-3 py-2">
                               {displayTime(record.clockOut)}
                             </td>
-                            <td className="border border-zinc-400 px-3 py-2">
+                            <td className="border-2 border-black px-3 py-2">
                               {displayDuration(record)}
                             </td>
                           </tr>
@@ -1077,7 +1077,7 @@ export default function Home() {
                         <tr>
                           <td
                             colSpan={10}
-                            className="border border-zinc-400 px-3 py-5 text-zinc-600"
+                            className="border-2 border-black px-3 py-5 text-zinc-600"
                           >
                             本日の打刻はまだありません。
                           </td>
