@@ -496,7 +496,7 @@ function ActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`whitespace-nowrap rounded border font-semibold shadow-[0_2px_5px_rgba(0,0,0,0.25)] transition active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45 ${sizeClass} ${toneClass}`}
+      className={`whitespace-nowrap rounded-none border font-semibold [font-family:'MS_Gothic','ＭＳ_ゴシック',monospace] shadow-[0_2px_5px_rgba(0,0,0,0.25)] transition active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45 ${sizeClass} ${toneClass}`}
     >
       {children}
     </button>
@@ -525,7 +525,7 @@ function StampCompleteModal({
         <button
           type="button"
           onClick={onClose}
-          className="mt-7 min-h-14 min-w-36 rounded border border-zinc-500 bg-zinc-100/60 px-8 py-3 text-xl font-semibold text-zinc-950 shadow-[0_2px_5px_rgba(0,0,0,0.25)] transition active:translate-y-px"
+          className="mt-7 min-h-14 min-w-36 rounded-none border border-zinc-500 bg-zinc-100/60 px-8 py-3 text-xl font-semibold text-zinc-950 shadow-[0_2px_5px_rgba(0,0,0,0.25)] transition active:translate-y-px [font-family:'MS_Gothic','ＭＳ_ゴシック',monospace]"
         >
           閉じる
         </button>
@@ -750,7 +750,7 @@ function MonthlySummaryScreen({
         <button
           type="button"
           onClick={onBack}
-          className="min-h-12 rounded border border-zinc-500 bg-zinc-100 px-6 py-2 text-lg font-semibold shadow"
+          className="min-h-12 rounded-none border border-zinc-500 bg-zinc-100 px-6 py-2 text-lg font-semibold shadow [font-family:'MS_Gothic','ＭＳ_ゴシック',monospace]"
         >
           戻る
         </button>
@@ -760,7 +760,7 @@ function MonthlySummaryScreen({
         <button
           type="button"
           onClick={onPreviousMonth}
-          className="min-h-12 rounded border border-zinc-500 bg-zinc-100 px-5 py-2 text-lg font-semibold text-zinc-950 shadow"
+          className="min-h-12 rounded-none border border-zinc-500 bg-zinc-100 px-5 py-2 text-lg font-semibold text-zinc-950 shadow [font-family:'MS_Gothic','ＭＳ_ゴシック',monospace]"
         >
           前月
         </button>
@@ -773,7 +773,7 @@ function MonthlySummaryScreen({
         <button
           type="button"
           onClick={onNextMonth}
-          className="min-h-12 rounded border border-zinc-500 bg-zinc-100 px-5 py-2 text-lg font-semibold text-zinc-950 shadow"
+          className="min-h-12 rounded-none border border-zinc-500 bg-zinc-100 px-5 py-2 text-lg font-semibold text-zinc-950 shadow [font-family:'MS_Gothic','ＭＳ_ゴシック',monospace]"
         >
           次月
         </button>
@@ -1057,7 +1057,7 @@ export default function Home() {
               <div className="mt-4 text-center">
                 <button
                   type="button"
-                  className="rounded border border-zinc-400 bg-zinc-100 px-5 py-2 text-sm font-semibold shadow"
+                  className="rounded-none border border-zinc-400 bg-zinc-100 px-5 py-2 text-sm font-semibold shadow [font-family:'MS_Gothic','ＭＳ_ゴシック',monospace]"
                   onClick={() => dispatch({ type: "showTodayRecords" })}
                 >
                   打刻漏れ確認
