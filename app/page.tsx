@@ -472,7 +472,7 @@ function ActionButton({
   onClick: () => void;
   disabled?: boolean;
   tone?: "default" | "primary" | "warning";
-  size?: "default" | "stamp";
+  size?: "default" | "clockIn" | "outing" | "clockOut";
 }) {
   const toneClass =
     tone === "primary"
@@ -481,8 +481,12 @@ function ActionButton({
         ? "border-orange-600 bg-white text-orange-900"
         : "border-zinc-400 bg-zinc-100 text-zinc-900";
   const sizeClass =
-    size === "stamp"
+    size === "clockIn"
       ? "h-24 w-48 px-6 py-4 text-2xl sm:h-28 sm:w-56 sm:text-3xl lg:h-32 lg:w-64"
+      : size === "outing"
+        ? "h-20 w-44 px-5 py-3 text-2xl sm:h-24 sm:w-52 sm:text-3xl lg:h-28 lg:w-56"
+        : size === "clockOut"
+          ? "h-24 w-56 px-6 py-4 text-2xl sm:h-28 sm:w-64 sm:text-3xl lg:h-32 lg:w-72"
       : "min-h-14 min-w-28 px-5 py-3 text-lg sm:min-h-16 sm:min-w-36 sm:text-xl";
 
   return (
@@ -537,104 +541,109 @@ function ClockActionButtons({
   selectedMonth: string;
   dispatch: (action: Action) => void;
 }) {
+  const isFinished = status === "finished";
+
   return (
-    <>
-      {status === "before" ? (
-        <ActionButton
-          tone="primary"
-          size="stamp"
-          onClick={() => dispatch({ type: "clockIn", at: new Date() })}
-        >
-          出勤
-        </ActionButton>
-      ) : null}
-
-      {status === "workingBeforeOuting1" ? (
-        <>
+    <div className="flex w-full max-w-[560px] flex-col items-center gap-8 lg:max-w-[320px] lg:items-end lg:gap-14 lg:pt-20">
+      <div className="flex flex-wrap justify-center gap-4 lg:flex-col lg:items-end lg:gap-7">
+        {status === "before" ? (
           <ActionButton
-            size="stamp"
-            onClick={() => dispatch({ type: "goOut", at: new Date() })}
+            tone="primary"
+            size="clockIn"
+            onClick={() => dispatch({ type: "clockIn", at: new Date() })}
           >
-            外出1
+            出勤
           </ActionButton>
+        ) : null}
+
+        {status === "workingBeforeOuting1" ? (
+          <>
+            <ActionButton
+              size="outing"
+              onClick={() => dispatch({ type: "goOut", at: new Date() })}
+            >
+              外出1
+            </ActionButton>
+            <ActionButton
+              tone="warning"
+              size="clockOut"
+              onClick={() => dispatch({ type: "clockOut", at: new Date() })}
+            >
+              退勤
+            </ActionButton>
+          </>
+        ) : null}
+
+        {status === "away1" ? (
+          <ActionButton
+            tone="primary"
+            onClick={() => dispatch({ type: "returnBack", at: new Date() })}
+          >
+            外出戻り1
+          </ActionButton>
+        ) : null}
+
+        {status === "workingBeforeOuting2" ? (
+          <>
+            <ActionButton
+              size="outing"
+              onClick={() => dispatch({ type: "goOut", at: new Date() })}
+            >
+              外出2
+            </ActionButton>
+            <ActionButton
+              tone="warning"
+              size="clockOut"
+              onClick={() => dispatch({ type: "clockOut", at: new Date() })}
+            >
+              退勤
+            </ActionButton>
+          </>
+        ) : null}
+
+        {status === "away2" ? (
+          <ActionButton
+            tone="primary"
+            onClick={() => dispatch({ type: "returnBack", at: new Date() })}
+          >
+            外出戻り2
+          </ActionButton>
+        ) : null}
+
+        {status === "workingAfterOuting2" ? (
           <ActionButton
             tone="warning"
-            size="stamp"
+            size="clockOut"
             onClick={() => dispatch({ type: "clockOut", at: new Date() })}
           >
             退勤
           </ActionButton>
-        </>
-      ) : null}
+        ) : null}
+      </div>
 
-      {status === "away1" ? (
+      <div className="grid w-full max-w-[520px] grid-cols-2 gap-3 lg:max-w-[320px]">
         <ActionButton
-          tone="primary"
-          onClick={() => dispatch({ type: "returnBack", at: new Date() })}
+          onClick={
+            isFinished
+              ? () => dispatch({ type: "openMonthly", month: selectedMonth })
+              : () => undefined
+          }
         >
-          外出戻り1
+          確認
         </ActionButton>
-      ) : null}
-
-      {status === "workingBeforeOuting2" ? (
-        <>
-          <ActionButton
-            size="stamp"
-            onClick={() => dispatch({ type: "goOut", at: new Date() })}
-          >
-            外出2
-          </ActionButton>
-          <ActionButton
-            tone="warning"
-            size="stamp"
-            onClick={() => dispatch({ type: "clockOut", at: new Date() })}
-          >
-            退勤
-          </ActionButton>
-        </>
-      ) : null}
-
-      {status === "away2" ? (
         <ActionButton
-          tone="primary"
-          onClick={() => dispatch({ type: "returnBack", at: new Date() })}
+          onClick={isFinished ? () => dispatch({ type: "showTodayRecords" }) : () => undefined}
         >
-          外出戻り2
+          当日打刻確認
         </ActionButton>
-      ) : null}
+      </div>
 
-      {status === "workingAfterOuting2" ? (
-        <ActionButton
-          tone="warning"
-          size="stamp"
-          onClick={() => dispatch({ type: "clockOut", at: new Date() })}
-        >
-          退勤
-        </ActionButton>
-      ) : null}
-
-      {status === "finished" ? (
-        <>
-          <ActionButton
-            onClick={() => dispatch({ type: "openMonthly", month: selectedMonth })}
-          >
-            確認
-          </ActionButton>
-          <ActionButton onClick={() => dispatch({ type: "showTodayRecords" })}>
-            当日打刻確認
-          </ActionButton>
-          <ActionButton onClick={() => dispatch({ type: "clearInput" })}>
-            クリア
-          </ActionButton>
-        </>
-      ) : null}
-
-      {status !== "finished" ? (
+      <div className="flex justify-center lg:w-full lg:justify-center">
         <ActionButton onClick={() => dispatch({ type: "clearInput" })}>
           クリア
         </ActionButton>
-      ) : null}
-    </>
+      </div>
+    </div>
   );
 }
 
@@ -1054,13 +1063,11 @@ export default function Home() {
             </div>
 
             <aside className="flex justify-center lg:justify-end">
-              <div className="flex w-full max-w-[560px] flex-wrap justify-center gap-4 lg:max-w-[280px] lg:flex-col lg:items-end lg:gap-16 xl:max-w-[320px]">
-                <ClockActionButtons
-                  status={status}
-                  selectedMonth={selectedMonth}
-                  dispatch={dispatch}
-                />
-              </div>
+              <ClockActionButtons
+                status={status}
+                selectedMonth={selectedMonth}
+                dispatch={dispatch}
+              />
             </aside>
           </section>
         )}
