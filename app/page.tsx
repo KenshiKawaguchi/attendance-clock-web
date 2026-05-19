@@ -552,7 +552,7 @@ function ClockActionButtons({
 
   return (
     <div className="flex w-full max-w-[520px] flex-col items-center gap-8 lg:max-w-[320px] lg:gap-14 lg:pt-20">
-      <div className="flex w-full flex-col items-center gap-4 lg:gap-7">
+      <div className="flex min-h-[8rem] w-full flex-col items-center justify-center gap-4 sm:min-h-[9rem] lg:min-h-[9.75rem] lg:gap-7">
         {status === "before" ? (
           <ActionButton
             size="clockIn"
@@ -647,6 +647,12 @@ function ClockActionButtons({
           >
             退勤
           </ActionButton>
+        ) : null}
+
+        {isFinished ? (
+          <p className="w-full text-center text-base font-semibold text-zinc-950 sm:text-lg lg:text-xl">
+            ※本日の打刻は終了しています
+          </p>
         ) : null}
       </div>
 
