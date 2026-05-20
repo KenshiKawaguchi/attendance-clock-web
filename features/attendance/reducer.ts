@@ -1,0 +1,255 @@
+import { EMPLOYEE_NAME_PLACEHOLDER } from "./constants";
+import { addMonths, dateKey, displayStampTime } from "./date";
+import type { Action, AttendanceRecord, AttendanceStatus, State } from "./types";
+
+export const initialState: State = {
+  employeeCode: "",
+  isCodeSubmitted: false,
+  records: [],
+  message: "",
+  showTodayRecords: true,
+  stampModal: null,
+  viewMode: "clock",
+  selectedMonth: "",
+};
+
+export function getCurrentRecord(
+  records: AttendanceRecord[],
+  employeeCode: string,
+  today: string,
+) {
+  return records.find(
+    (record) => record.employeeCode === employeeCode && record.date === today,
+  );
+}
+
+export function getMonthlyRecords(
+  records: AttendanceRecord[],
+  employeeCode: string,
+  selectedMonth: string,
+) {
+  return records
+    .filter(
+      (record) =>
+        record.employeeCode === employeeCode && record.date.startsWith(selectedMonth),
+    )
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export function getStatus(record?: AttendanceRecord): AttendanceStatus {
+  if (!record?.clockIn) return "before";
+  if (record.clockOut) return "finished";
+
+  const firstOuting = record.outings[0];
+  const secondOuting = record.outings[1];
+  const thirdOuting = record.outings[2];
+
+  if (!firstOuting?.out) return "workingBeforeOuting1";
+  if (!firstOuting.back) return "away1";
+  if (!secondOuting?.out) return "workingBeforeOuting2";
+  if (!secondOuting.back) return "away2";
+  if (!thirdOuting?.out) return "workingBeforeOuting3";
+  if (!thirdOuting.back) return "away3";
+
+  return "workingAfterOuting3";
+}
+
+function upsertRecord(
+  records: AttendanceRecord[],
+  employeeCode: string,
+  at: Date,
+  update: (record: AttendanceRecord) => AttendanceRecord,
+) {
+  const today = dateKey(at);
+  const id = `${today}-${employeeCode}`;
+  const existing = getCurrentRecord(records, employeeCode, today);
+  const base: AttendanceRecord = existing ?? {
+    id,
+    employeeCode,
+    employeeName: EMPLOYEE_NAME_PLACEHOLDER,
+    date: today,
+    outings: [],
+  };
+  const nextRecord = update(base);
+
+  if (!existing) return [...records, nextRecord];
+
+  return records.map((record) => (record.id === id ? nextRecord : record));
+}
+
+export function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case "hydrate":
+      return { ...state, records: action.records };
+
+    case "appendDigit":
+      if (state.employeeCode.length >= 7) return state;
+      return {
+        ...state,
+        employeeCode: `${state.employeeCode}${action.digit}`,
+        isCodeSubmitted: false,
+        message: "",
+      };
+
+    case "backspace":
+      return {
+        ...state,
+        employeeCode: state.employeeCode.slice(0, -1),
+        isCodeSubmitted: false,
+        message: "",
+      };
+
+    case "clearCode":
+      return {
+        ...state,
+        employeeCode: "",
+        isCodeSubmitted: false,
+        message: "",
+      };
+
+    case "clearInput":
+      return {
+        ...state,
+        employeeCode: "",
+        isCodeSubmitted: false,
+        viewMode: "clock",
+        message: "入力をクリアしました。保存済みの打刻履歴は残っています。",
+      };
+
+    case "setEmployeeCode":
+      return {
+        ...state,
+        employeeCode: action.value.replace(/\D/g, "").slice(0, 7),
+        isCodeSubmitted: false,
+        message: "",
+      };
+
+    case "submitCode":
+      if (state.employeeCode.length !== 7) {
+        return {
+          ...state,
+          message: "従業員コードを7桁で入力してください。",
+        };
+      }
+      return {
+        ...state,
+        isCodeSubmitted: true,
+        message: "",
+      };
+
+    case "clockIn":
+      if (state.employeeCode.length !== 7) return state;
+      return {
+        ...state,
+        records: upsertRecord(state.records, state.employeeCode, action.at, (record) => ({
+          ...record,
+          clockIn: record.clockIn ?? action.at.toISOString(),
+        })),
+        message: "出勤を記録しました。",
+        stampModal: {
+          time: displayStampTime(action.at),
+          actionLabel: "出勤",
+          variant: "clockIn",
+          employeeName: EMPLOYEE_NAME_PLACEHOLDER,
+        },
+      };
+
+    case "goOut":
+      if (state.employeeCode.length !== 7) return state;
+      return {
+        ...state,
+        records: upsertRecord(state.records, state.employeeCode, action.at, (record) => ({
+          ...record,
+          outings:
+            record.outings.length >= 3
+              ? record.outings
+              : [...record.outings, { out: action.at.toISOString() }],
+        })),
+        message: "外出を記録しました。",
+        stampModal: {
+          time: displayStampTime(action.at),
+          actionLabel: "外出",
+          variant: "outing",
+          employeeName: EMPLOYEE_NAME_PLACEHOLDER,
+        },
+      };
+
+    case "returnBack":
+      if (state.employeeCode.length !== 7) return state;
+      return {
+        ...state,
+        records: upsertRecord(state.records, state.employeeCode, action.at, (record) => ({
+          ...record,
+          outings: record.outings.map((outing) =>
+            outing.out && !outing.back
+              ? { ...outing, back: outing.back ?? action.at.toISOString() }
+              : outing,
+          ),
+        })),
+        message: "戻りを記録しました。",
+        stampModal: {
+          time: displayStampTime(action.at),
+          actionLabel: "外出戻り",
+          variant: "outing",
+          employeeName: EMPLOYEE_NAME_PLACEHOLDER,
+        },
+      };
+
+    case "clockOut":
+      if (state.employeeCode.length !== 7) return state;
+      return {
+        ...state,
+        records: upsertRecord(state.records, state.employeeCode, action.at, (record) => ({
+          ...record,
+          clockOut: record.clockOut ?? action.at.toISOString(),
+        })),
+        message: "退勤を記録しました。",
+        showTodayRecords: true,
+        stampModal: {
+          time: displayStampTime(action.at),
+          actionLabel: "退勤",
+          variant: "clockOut",
+          employeeName: EMPLOYEE_NAME_PLACEHOLDER,
+        },
+      };
+
+    case "openMonthly":
+      return {
+        ...state,
+        selectedMonth: action.month,
+        viewMode: "monthly",
+        message: "",
+      };
+
+    case "closeMonthly":
+      return {
+        ...state,
+        viewMode: "clock",
+        message: "",
+      };
+
+    case "moveMonth":
+      return {
+        ...state,
+        selectedMonth: addMonths(state.selectedMonth, action.direction),
+        message: "",
+      };
+
+    case "showTodayRecords":
+      return {
+        ...state,
+        showTodayRecords: true,
+        message: "当日の打刻を表示しています。",
+      };
+
+    case "closeStampModal":
+      return {
+        ...state,
+        employeeCode: "",
+        isCodeSubmitted: false,
+        viewMode: "clock",
+        message: "",
+        stampModal: null,
+      };
+  }
+}
