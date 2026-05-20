@@ -52,10 +52,12 @@ export type Action =
   | { type: "clearInput" }
   | { type: "setEmployeeCode"; value: string }
   | { type: "submitCode" }
-  | { type: "clockIn"; at: Date }
-  | { type: "clockOut"; at: Date }
-  | { type: "goOut"; at: Date }
-  | { type: "returnBack"; at: Date }
+  | { type: "clockIn"; at: Date; employeeName?: string }
+  | { type: "clockOut"; at: Date; employeeName?: string }
+  | { type: "goOut"; at: Date; employeeName?: string }
+  | { type: "returnBack"; at: Date; employeeName?: string }
+  | { type: "replaceRecord"; record: AttendanceRecord }
+  | { type: "setMessage"; message: string }
   | { type: "openMonthly"; month: string }
   | { type: "closeMonthly" }
   | { type: "moveMonth"; direction: -1 | 1 }

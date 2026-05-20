@@ -25,6 +25,12 @@ import {
 } from "@/features/attendance/reducer";
 import type { AttendanceRecord } from "@/features/attendance/types";
 import {
+  AttendanceApiError,
+  type PunchActionType,
+  punchAttendanceApi,
+  toAttendanceRecord,
+} from "@/lib/attendance-api";
+import {
   readAttendanceRecords,
   writeAttendanceRecords,
 } from "@/lib/attendance-storage";
@@ -209,6 +215,33 @@ export default function Home() {
     [monthlyRecords],
   );
 
+  async function handlePunch(actionType: PunchActionType) {
+    const at = new Date();
+
+    try {
+      const data = await punchAttendanceApi({
+        employeeCode: state.employeeCode,
+        actionType,
+        at,
+      });
+
+      dispatch({
+        type: actionType,
+        at,
+        employeeName: data.employee.name,
+      });
+      dispatch({ type: "replaceRecord", record: toAttendanceRecord(data) });
+    } catch (error) {
+      dispatch({
+        type: "setMessage",
+        message:
+          error instanceof AttendanceApiError
+            ? error.message
+            : "打刻処理に失敗しました。",
+      });
+    }
+  }
+
   return (
     <main className="min-h-dvh bg-[#00df08] text-zinc-950">
       <div className="mx-auto flex min-h-dvh w-full max-w-[1440px] flex-col gap-3 p-3 sm:p-4 lg:p-5">
@@ -313,6 +346,10 @@ export default function Home() {
                 status={status}
                 selectedMonth={selectedMonth}
                 dispatch={dispatch}
+                onClockIn={() => void handlePunch("clockIn")}
+                onGoOut={() => void handlePunch("goOut")}
+                onReturnBack={() => void handlePunch("returnBack")}
+                onClockOut={() => void handlePunch("clockOut")}
               />
             </aside>
           </section>

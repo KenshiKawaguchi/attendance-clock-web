@@ -59,6 +59,7 @@ function upsertRecord(
   employeeCode: string,
   at: Date,
   update: (record: AttendanceRecord) => AttendanceRecord,
+  employeeName = EMPLOYEE_NAME_PLACEHOLDER,
 ) {
   const today = dateKey(at);
   const id = `${today}-${employeeCode}`;
@@ -66,11 +67,11 @@ function upsertRecord(
   const base: AttendanceRecord = existing ?? {
     id,
     employeeCode,
-    employeeName: EMPLOYEE_NAME_PLACEHOLDER,
+    employeeName,
     date: today,
     outings: [],
   };
-  const nextRecord = update(base);
+  const nextRecord = { ...update(base), employeeName };
 
   if (!existing) return [...records, nextRecord];
 
@@ -124,6 +125,21 @@ export function reducer(state: State, action: Action): State {
         message: "",
       };
 
+    case "setMessage":
+      return {
+        ...state,
+        message: action.message,
+      };
+
+    case "replaceRecord":
+      return {
+        ...state,
+        records: [
+          ...state.records.filter((record) => record.id !== action.record.id),
+          action.record,
+        ].sort((a, b) => a.date.localeCompare(b.date)),
+      };
+
     case "submitCode":
       if (state.employeeCode.length !== 7) {
         return {
@@ -139,23 +155,25 @@ export function reducer(state: State, action: Action): State {
 
     case "clockIn":
       if (state.employeeCode.length !== 7) return state;
+      const clockInEmployeeName = action.employeeName ?? EMPLOYEE_NAME_PLACEHOLDER;
       return {
         ...state,
         records: upsertRecord(state.records, state.employeeCode, action.at, (record) => ({
           ...record,
           clockIn: record.clockIn ?? action.at.toISOString(),
-        })),
+        }), clockInEmployeeName),
         message: "出勤を記録しました。",
         stampModal: {
           time: displayStampTime(action.at),
           actionLabel: "出勤",
           variant: "clockIn",
-          employeeName: EMPLOYEE_NAME_PLACEHOLDER,
+          employeeName: clockInEmployeeName,
         },
       };
 
     case "goOut":
       if (state.employeeCode.length !== 7) return state;
+      const goOutEmployeeName = action.employeeName ?? EMPLOYEE_NAME_PLACEHOLDER;
       return {
         ...state,
         records: upsertRecord(state.records, state.employeeCode, action.at, (record) => ({
@@ -164,18 +182,19 @@ export function reducer(state: State, action: Action): State {
             record.outings.length >= 3
               ? record.outings
               : [...record.outings, { out: action.at.toISOString() }],
-        })),
+        }), goOutEmployeeName),
         message: "外出を記録しました。",
         stampModal: {
           time: displayStampTime(action.at),
           actionLabel: "外出",
           variant: "outing",
-          employeeName: EMPLOYEE_NAME_PLACEHOLDER,
+          employeeName: goOutEmployeeName,
         },
       };
 
     case "returnBack":
       if (state.employeeCode.length !== 7) return state;
+      const returnBackEmployeeName = action.employeeName ?? EMPLOYEE_NAME_PLACEHOLDER;
       return {
         ...state,
         records: upsertRecord(state.records, state.employeeCode, action.at, (record) => ({
@@ -185,31 +204,32 @@ export function reducer(state: State, action: Action): State {
               ? { ...outing, back: outing.back ?? action.at.toISOString() }
               : outing,
           ),
-        })),
+        }), returnBackEmployeeName),
         message: "戻りを記録しました。",
         stampModal: {
           time: displayStampTime(action.at),
           actionLabel: "外出戻り",
           variant: "outing",
-          employeeName: EMPLOYEE_NAME_PLACEHOLDER,
+          employeeName: returnBackEmployeeName,
         },
       };
 
     case "clockOut":
       if (state.employeeCode.length !== 7) return state;
+      const clockOutEmployeeName = action.employeeName ?? EMPLOYEE_NAME_PLACEHOLDER;
       return {
         ...state,
         records: upsertRecord(state.records, state.employeeCode, action.at, (record) => ({
           ...record,
           clockOut: record.clockOut ?? action.at.toISOString(),
-        })),
+        }), clockOutEmployeeName),
         message: "退勤を記録しました。",
         showTodayRecords: true,
         stampModal: {
           time: displayStampTime(action.at),
           actionLabel: "退勤",
           variant: "clockOut",
-          employeeName: EMPLOYEE_NAME_PLACEHOLDER,
+          employeeName: clockOutEmployeeName,
         },
       };
 
