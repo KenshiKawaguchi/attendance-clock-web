@@ -64,6 +64,7 @@ export type Action =
   | { type: "goOut"; at: Date; employeeName?: string }
   | { type: "returnBack"; at: Date; employeeName?: string }
   | { type: "replaceRecord"; record: AttendanceRecord }
+  | { type: "replaceRecords"; records: AttendanceRecord[] }
   | { type: "setMessage"; message: string }
   | { type: "openMonthly"; month: string }
   | { type: "closeMonthly" }

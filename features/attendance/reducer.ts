@@ -146,6 +146,18 @@ export function reducer(state: State, action: Action): State {
         ].sort((a, b) => a.date.localeCompare(b.date)),
       };
 
+    case "replaceRecords":
+      return {
+        ...state,
+        records: [
+          ...state.records.filter(
+            (record) =>
+              !action.records.some((nextRecord) => nextRecord.id === record.id),
+          ),
+          ...action.records,
+        ].sort((a, b) => a.date.localeCompare(b.date)),
+      };
+
     case "submitCode":
       if (state.employeeCode.length !== 7) {
         return {

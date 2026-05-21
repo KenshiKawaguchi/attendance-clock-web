@@ -61,6 +61,18 @@ export type AttendanceSnapshotResult = {
   outings: AttendanceOutingRow[];
 };
 
+export type MonthlyAttendanceResult = {
+  employee: {
+    id: string;
+    employeeCode: string;
+    name: string;
+  };
+  records: {
+    record: AttendanceRecordRow;
+    outings: AttendanceOutingRow[];
+  }[];
+};
+
 export class AttendanceRepositoryError extends Error {
   constructor(
     message: string,
@@ -150,6 +162,69 @@ export async function getAttendanceSnapshot(
     },
     record: typedRecord,
     outings,
+  };
+}
+
+export async function getMonthlyAttendance(
+  supabase: SupabaseClient,
+  {
+    employeeCode,
+    month,
+  }: {
+    employeeCode: string;
+    month: string;
+  },
+): Promise<MonthlyAttendanceResult> {
+  const { data: employee, error: employeeError } = await supabase
+    .from("employees")
+    .select("id, employee_code, name, active")
+    .eq("employee_code", employeeCode)
+    .maybeSingle();
+
+  if (employeeError) throw employeeError;
+  assertKnownEmployee(employee as EmployeeRow | null);
+
+  const typedEmployee = employee as EmployeeRow;
+  const [year, monthNumber] = month.split("-").map(Number);
+  const startDate = `${month}-01`;
+  const endDate = `${month}-${String(new Date(year, monthNumber, 0).getDate()).padStart(2, "0")}`;
+
+  const { data: records, error: recordsError } = await supabase
+    .from("attendance_records")
+    .select("*")
+    .eq("employee_id", typedEmployee.id)
+    .gte("work_date", startDate)
+    .lte("work_date", endDate)
+    .order("work_date", { ascending: true });
+
+  if (recordsError) throw recordsError;
+
+  const typedRecords = (records ?? []) as AttendanceRecordRow[];
+  const recordIds = typedRecords.map((record) => record.id);
+  const { data: outings, error: outingsError } = recordIds.length
+    ? await supabase
+        .from("attendance_outings")
+        .select("*")
+        .in("attendance_record_id", recordIds)
+        .order("outing_index", { ascending: true })
+    : { data: [], error: null };
+
+  if (outingsError) throw outingsError;
+
+  const typedOutings = (outings ?? []) as AttendanceOutingRow[];
+
+  return {
+    employee: {
+      id: typedEmployee.id,
+      employeeCode: typedEmployee.employee_code,
+      name: typedEmployee.name,
+    },
+    records: typedRecords.map((record) => ({
+      record,
+      outings: typedOutings.filter(
+        (outing) => outing.attendance_record_id === record.id,
+      ),
+    })),
   };
 }
 

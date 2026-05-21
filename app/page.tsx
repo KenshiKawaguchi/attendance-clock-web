@@ -4,18 +4,11 @@ import { useEffect, useMemo, useReducer, useState } from "react";
 import { ClockActionButtons } from "@/components/ActionButtons";
 import { ClockPanel } from "@/components/ClockPanel";
 import { Keypad } from "@/components/Keypad";
+import { MonthlyAttendanceModal } from "@/components/MonthlyAttendanceModal";
 import { StampCompleteModal } from "@/components/StampModal";
 import { TodayTable } from "@/components/TodayTable";
-import { EMPLOYEE_NAME_PLACEHOLDER, STORE_NAME } from "@/features/attendance/constants";
-import {
-  dateKey,
-  displayDuration,
-  displayMonth,
-  displayTime,
-  formatMinutes,
-  getWorkedMinutes,
-  monthKey,
-} from "@/features/attendance/date";
+import { STORE_NAME } from "@/features/attendance/constants";
+import { dateKey, getWorkedMinutes, monthKey } from "@/features/attendance/date";
 import {
   getCurrentRecord,
   getMonthlyRecords,
@@ -23,141 +16,15 @@ import {
   initialState,
   reducer,
 } from "@/features/attendance/reducer";
-import type { AttendanceRecord } from "@/features/attendance/types";
 import {
   AttendanceApiError,
   fetchAttendanceSnapshotApi,
+  fetchMonthlyAttendanceApi,
   type PunchActionType,
   punchAttendanceApi,
   toAttendanceRecord,
+  toAttendanceRecords,
 } from "@/lib/attendance-api";
-
-function MonthlySummaryScreen({
-  employeeCode,
-  month,
-  records,
-  totalMinutes,
-  onPreviousMonth,
-  onNextMonth,
-  onBack,
-}: {
-  employeeCode: string;
-  month: string;
-  records: AttendanceRecord[];
-  totalMinutes: number;
-  onPreviousMonth: () => void;
-  onNextMonth: () => void;
-  onBack: () => void;
-}) {
-  return (
-    <section className="flex flex-1 flex-col gap-4">
-      <div className="grid gap-4 rounded-sm bg-white/75 p-4 shadow-md lg:grid-cols-[1fr_auto] lg:items-center">
-        <div>
-          <p className="text-xl font-bold sm:text-2xl">勤怠確認</p>
-          <p className="mt-1 text-base font-semibold text-zinc-700 sm:text-lg">
-            従業員コード {employeeCode} / 氏名 {EMPLOYEE_NAME_PLACEHOLDER}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onBack}
-          className="min-h-12 rounded-none border border-zinc-500 bg-zinc-100 px-6 py-2 text-lg font-semibold shadow [font-family:'MS_Gothic','ＭＳ_ゴシック',monospace]"
-        >
-          戻る
-        </button>
-      </div>
-
-      <div className="grid gap-4 rounded-sm bg-zinc-900/90 p-4 text-white shadow-lg md:grid-cols-[auto_1fr_auto] md:items-center">
-        <button
-          type="button"
-          onClick={onPreviousMonth}
-          className="min-h-12 rounded-none border border-zinc-500 bg-zinc-100 px-5 py-2 text-lg font-semibold text-zinc-950 shadow [font-family:'MS_Gothic','ＭＳ_ゴシック',monospace]"
-        >
-          前月
-        </button>
-        <div className="text-center">
-          <p className="text-3xl font-bold sm:text-4xl">{displayMonth(month)}</p>
-          <p className="mt-2 text-xl font-semibold text-[#ff9d1c] sm:text-2xl">
-            月合計 {formatMinutes(totalMinutes)}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onNextMonth}
-          className="min-h-12 rounded-none border border-zinc-500 bg-zinc-100 px-5 py-2 text-lg font-semibold text-zinc-950 shadow [font-family:'MS_Gothic','ＭＳ_ゴシック',monospace]"
-        >
-          次月
-        </button>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="min-w-[980px] border-collapse bg-white text-center text-sm shadow-md sm:text-base">
-          <thead>
-            <tr className="bg-[#d92913] text-white">
-              <th className="border border-zinc-500 px-3 py-2">出勤日</th>
-              <th className="border border-zinc-500 px-3 py-2">出勤</th>
-              <th className="border border-zinc-500 px-3 py-2">外出1</th>
-              <th className="border border-zinc-500 px-3 py-2">戻り1</th>
-              <th className="border border-zinc-500 px-3 py-2">外出2</th>
-              <th className="border border-zinc-500 px-3 py-2">戻り2</th>
-              <th className="border border-zinc-500 px-3 py-2">外出3</th>
-              <th className="border border-zinc-500 px-3 py-2">戻り3</th>
-              <th className="border border-zinc-500 px-3 py-2">退勤</th>
-              <th className="border border-zinc-500 px-3 py-2">時間</th>
-            </tr>
-          </thead>
-          <tbody>
-            {records.length > 0 ? (
-              records.map((record) => (
-                <tr key={record.id}>
-                  <td className="border border-zinc-400 px-3 py-2">
-                    {record.date.replaceAll("-", "/")}
-                  </td>
-                  <td className="border border-zinc-400 px-3 py-2">
-                    {displayTime(record.clockIn)}
-                  </td>
-                  <td className="border border-zinc-400 px-3 py-2">
-                    {displayTime(record.outings[0]?.out)}
-                  </td>
-                  <td className="border border-zinc-400 px-3 py-2">
-                    {displayTime(record.outings[0]?.back)}
-                  </td>
-                  <td className="border border-zinc-400 px-3 py-2">
-                    {displayTime(record.outings[1]?.out)}
-                  </td>
-                  <td className="border border-zinc-400 px-3 py-2">
-                    {displayTime(record.outings[1]?.back)}
-                  </td>
-                  <td className="border border-zinc-400 px-3 py-2">
-                    {displayTime(record.outings[2]?.out)}
-                  </td>
-                  <td className="border border-zinc-400 px-3 py-2">
-                    {displayTime(record.outings[2]?.back)}
-                  </td>
-                  <td className="border border-zinc-400 px-3 py-2">
-                    {displayTime(record.clockOut)}
-                  </td>
-                  <td className="border border-zinc-400 px-3 py-2">
-                    {displayDuration(record)}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={10}
-                  className="border border-zinc-400 px-3 py-8 text-zinc-600"
-                >
-                  この月の勤怠はまだありません。
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
 
 export default function Home() {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -201,6 +68,39 @@ export default function Home() {
       }, 0),
     [monthlyRecords],
   );
+
+  useEffect(() => {
+    if (!isMonthlyScreen || state.employeeCode.length !== 7) return;
+
+    let isActive = true;
+
+    async function loadMonthlyRecords() {
+      try {
+        const data = await fetchMonthlyAttendanceApi({
+          employeeCode: state.employeeCode,
+          month: selectedMonth,
+        });
+
+        if (!isActive) return;
+        dispatch({ type: "replaceRecords", records: toAttendanceRecords(data) });
+      } catch (error) {
+        if (!isActive) return;
+        dispatch({
+          type: "setMessage",
+          message:
+            error instanceof AttendanceApiError
+              ? error.message
+              : "打刻実績の取得に失敗しました。",
+        });
+      }
+    }
+
+    void loadMonthlyRecords();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isMonthlyScreen, selectedMonth, state.employeeCode]);
 
   async function handlePunch(actionType: PunchActionType) {
     const at = new Date();
@@ -270,17 +170,7 @@ export default function Home() {
           {STORE_NAME}
         </header>
 
-        {isMonthlyScreen ? (
-          <MonthlySummaryScreen
-            employeeCode={state.employeeCode}
-            month={selectedMonth}
-            records={monthlyRecords}
-            totalMinutes={monthlyTotalMinutes}
-            onPreviousMonth={() => dispatch({ type: "moveMonth", direction: -1 })}
-            onNextMonth={() => dispatch({ type: "moveMonth", direction: 1 })}
-            onBack={() => dispatch({ type: "closeMonthly" })}
-          />
-        ) : !isClockScreen ? (
+        {!isClockScreen ? (
           <section className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.8fr)_minmax(300px,0.65fr)] xl:grid-cols-[minmax(0,2fr)_minmax(340px,0.7fr)]">
             <div className="flex min-w-0 flex-col gap-4">
               <ClockPanel now={now} />
@@ -376,6 +266,17 @@ export default function Home() {
           </section>
         )}
       </div>
+      {isMonthlyScreen ? (
+        <MonthlyAttendanceModal
+          employeeName={state.employeeName}
+          month={selectedMonth}
+          records={monthlyRecords}
+          totalMinutes={monthlyTotalMinutes}
+          onPreviousMonth={() => dispatch({ type: "moveMonth", direction: -1 })}
+          onNextMonth={() => dispatch({ type: "moveMonth", direction: 1 })}
+          onClose={() => dispatch({ type: "closeMonthly" })}
+        />
+      ) : null}
       {state.stampModal ? (
         <StampCompleteModal
           modal={state.stampModal}

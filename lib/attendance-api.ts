@@ -54,6 +54,22 @@ type AttendanceSnapshotResponse = {
   };
 };
 
+type MonthlyAttendanceResponse = {
+  ok: boolean;
+  message?: string;
+  data?: {
+    employee: {
+      id: string;
+      employeeCode: string;
+      name: string;
+    };
+    records: {
+      record: NonNullable<AttendanceSnapshotResponse["data"]>["record"];
+      outings: NonNullable<AttendanceSnapshotResponse["data"]>["outings"];
+    }[];
+  };
+};
+
 const punchTypeMap = {
   clockIn: "clock_in",
   goOut: "go_out",
@@ -117,6 +133,26 @@ export async function fetchAttendanceSnapshotApi({
   return body.data;
 }
 
+export async function fetchMonthlyAttendanceApi({
+  employeeCode,
+  month,
+}: {
+  employeeCode: string;
+  month: string;
+}) {
+  const params = new URLSearchParams({ employeeCode, month });
+  const response = await fetch(`/api/attendance?${params.toString()}`);
+  const body = (await response.json().catch(() => null)) as
+    | MonthlyAttendanceResponse
+    | null;
+
+  if (!response.ok || !body?.ok || !body.data) {
+    throw new AttendanceApiError(body?.message ?? "打刻実績の取得に失敗しました。");
+  }
+
+  return body.data;
+}
+
 export function toAttendanceRecord(data: {
   employee: {
     employeeCode: string;
@@ -139,4 +175,16 @@ export function toAttendanceRecord(data: {
     })),
     clockOut: data.record.clock_out_at ?? undefined,
   };
+}
+
+export function toAttendanceRecords(data: NonNullable<MonthlyAttendanceResponse["data"]>) {
+  return data.records
+    .map(({ record, outings }) =>
+      toAttendanceRecord({
+        employee: data.employee,
+        record,
+        outings,
+      }),
+    )
+    .filter((record): record is AttendanceRecord => Boolean(record));
 }

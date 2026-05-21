@@ -156,11 +156,7 @@ export function ClockActionButtons({
       <div className="grid w-full max-w-[520px] grid-cols-2 gap-3 lg:max-w-[320px]">
         <ActionButton
           size="confirm"
-          onClick={
-            isFinished
-              ? () => dispatch({ type: "openMonthly", month: selectedMonth })
-              : () => undefined
-          }
+          onClick={() => dispatch({ type: "openMonthly", month: selectedMonth })}
         >
           確　認
         </ActionButton>
