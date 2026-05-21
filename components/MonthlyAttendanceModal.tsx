@@ -62,27 +62,27 @@ export function MonthlyAttendanceModal({
         <div className="flex min-h-0 flex-1 flex-col gap-3 px-5 pb-4 pt-4">
           <div className="min-h-0 flex-1 overflow-auto border border-zinc-500 bg-white">
             <table className="w-full min-w-[1060px] border-collapse text-center text-[15px] font-semibold text-zinc-700 sm:text-base">
-              <thead className="sticky top-0 z-10">
+              <thead>
                 <tr>
                   <th
                     colSpan={11}
-                    className="border border-[#20327d] bg-[#1519b8] px-3 py-2 text-lg font-bold text-white"
+                    className="sticky top-0 z-20 border border-[#20327d] bg-[#1519b8] px-3 py-2 text-lg font-bold text-white"
                   >
                     {employeeName}：打刻実績
                   </th>
                 </tr>
                 <tr className="bg-[#6aa36a] text-white">
-                  <th className="w-[22%] border border-zinc-600 px-3 py-2">勤務店舗</th>
-                  <th className="w-[11%] border border-zinc-600 px-3 py-2">出勤日</th>
-                  <th className="w-[7%] border border-zinc-600 px-3 py-2">出勤</th>
-                  <th className="w-[7%] border border-zinc-600 px-3 py-2">退勤</th>
-                  <th className="w-[7%] border border-zinc-600 px-3 py-2">外出1</th>
-                  <th className="w-[7%] border border-zinc-600 px-3 py-2">戻り1</th>
-                  <th className="w-[7%] border border-zinc-600 px-3 py-2">外出2</th>
-                  <th className="w-[7%] border border-zinc-600 px-3 py-2">戻り2</th>
-                  <th className="w-[7%] border border-zinc-600 px-3 py-2">外出3</th>
-                  <th className="w-[7%] border border-zinc-600 px-3 py-2">戻り3</th>
-                  <th className="w-[8%] border border-zinc-600 px-3 py-2">時間</th>
+                  <th className="sticky top-[41px] z-20 w-[22%] border border-zinc-600 bg-[#6aa36a] px-3 py-2">勤務店舗</th>
+                  <th className="sticky top-[41px] z-20 w-[11%] border border-zinc-600 bg-[#6aa36a] px-3 py-2">出勤日</th>
+                  <th className="sticky top-[41px] z-20 w-[7%] border border-zinc-600 bg-[#6aa36a] px-3 py-2">出勤</th>
+                  <th className="sticky top-[41px] z-20 w-[7%] border border-zinc-600 bg-[#6aa36a] px-3 py-2">退勤</th>
+                  <th className="sticky top-[41px] z-20 w-[7%] border border-zinc-600 bg-[#6aa36a] px-3 py-2">外出1</th>
+                  <th className="sticky top-[41px] z-20 w-[7%] border border-zinc-600 bg-[#6aa36a] px-3 py-2">戻り1</th>
+                  <th className="sticky top-[41px] z-20 w-[7%] border border-zinc-600 bg-[#6aa36a] px-3 py-2">外出2</th>
+                  <th className="sticky top-[41px] z-20 w-[7%] border border-zinc-600 bg-[#6aa36a] px-3 py-2">戻り2</th>
+                  <th className="sticky top-[41px] z-20 w-[7%] border border-zinc-600 bg-[#6aa36a] px-3 py-2">外出3</th>
+                  <th className="sticky top-[41px] z-20 w-[7%] border border-zinc-600 bg-[#6aa36a] px-3 py-2">戻り3</th>
+                  <th className="sticky top-[41px] z-20 w-[8%] border border-zinc-600 bg-[#6aa36a] px-3 py-2">時間</th>
                 </tr>
               </thead>
               <tbody>
