@@ -298,6 +298,20 @@ export function reducer(state: State, action: Action): State {
         message: "",
       };
 
+    case "openDailyStore":
+      return {
+        ...state,
+        viewMode: "dailyStore",
+        message: "",
+      };
+
+    case "closeDailyStore":
+      return {
+        ...state,
+        viewMode: "clock",
+        message: "",
+      };
+
     case "showTodayRecords":
       return {
         ...state,

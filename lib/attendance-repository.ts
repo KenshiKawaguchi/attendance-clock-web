@@ -86,6 +86,26 @@ export type MonthlyAttendanceResult = {
   }[];
 };
 
+export type DailyStoreAttendanceResult = {
+  store: {
+    id: string;
+    storeCode: string;
+    storeName: string;
+  };
+  date: string;
+  rows: {
+    employee: {
+      id: string;
+      employeeCode: string;
+      name: string;
+      storeCode: string;
+      storeName: string;
+    };
+    record: AttendanceRecordRow | null;
+    outings: AttendanceOutingRow[];
+  }[];
+};
+
 export class AttendanceRepositoryError extends Error {
   constructor(
     message: string,
@@ -109,6 +129,7 @@ function assertKnownEmployee(employee: EmployeeRow | null) {
 function employeeStore(employee: EmployeeRow) {
   const store = Array.isArray(employee.stores) ? employee.stores[0] : employee.stores;
   return {
+    storeId: store?.id ?? employee.store_id ?? "",
     storeCode: store?.store_code ?? "",
     storeName: store?.name ?? "",
   };
@@ -252,6 +273,97 @@ export async function getMonthlyAttendance(
         (outing) => outing.attendance_record_id === record.id,
       ),
     })),
+  };
+}
+
+export async function getDailyStoreAttendance(
+  supabase: SupabaseClient,
+  {
+    employeeCode,
+    workDate,
+  }: {
+    employeeCode: string;
+    workDate: string;
+  },
+): Promise<DailyStoreAttendanceResult> {
+  const { data: employee, error: employeeError } = await supabase
+    .from("employees")
+    .select("id, store_id, employee_code, name, active, stores ( id, store_code, name )")
+    .eq("employee_code", employeeCode)
+    .maybeSingle();
+
+  if (employeeError) throw employeeError;
+  assertKnownEmployee(employee as EmployeeRow | null);
+
+  const typedEmployee = employee as EmployeeRow;
+  const store = employeeStore(typedEmployee);
+  if (!store.storeId) {
+    throw new AttendanceRepositoryError("所属店舗が設定されていません。", 404);
+  }
+
+  const { data: employees, error: employeesError } = await supabase
+    .from("employees")
+    .select("id, store_id, employee_code, name, active, stores ( id, store_code, name )")
+    .eq("store_id", store.storeId)
+    .eq("active", true)
+    .order("employee_code", { ascending: true });
+
+  if (employeesError) throw employeesError;
+
+  const typedEmployees = (employees ?? []) as EmployeeRow[];
+  const employeeIds = typedEmployees.map((storeEmployee) => storeEmployee.id);
+  const { data: records, error: recordsError } = employeeIds.length
+    ? await supabase
+        .from("attendance_records")
+        .select("*")
+        .in("employee_id", employeeIds)
+        .eq("work_date", workDate)
+    : { data: [], error: null };
+
+  if (recordsError) throw recordsError;
+
+  const typedRecords = (records ?? []) as AttendanceRecordRow[];
+  const recordIds = typedRecords.map((record) => record.id);
+  const { data: outings, error: outingsError } = recordIds.length
+    ? await supabase
+        .from("attendance_outings")
+        .select("*")
+        .in("attendance_record_id", recordIds)
+        .order("outing_index", { ascending: true })
+    : { data: [], error: null };
+
+  if (outingsError) throw outingsError;
+
+  const typedOutings = (outings ?? []) as AttendanceOutingRow[];
+  const recordsByEmployeeId = new Map(
+    typedRecords.map((record) => [record.employee_id, record]),
+  );
+
+  return {
+    store: {
+      id: store.storeId,
+      storeCode: store.storeCode,
+      storeName: store.storeName,
+    },
+    date: workDate,
+    rows: typedEmployees.map((storeEmployee) => {
+      const employeeStoreInfo = employeeStore(storeEmployee);
+      const record = recordsByEmployeeId.get(storeEmployee.id) ?? null;
+
+      return {
+        employee: {
+          id: storeEmployee.id,
+          employeeCode: storeEmployee.employee_code,
+          name: storeEmployee.name,
+          storeCode: employeeStoreInfo.storeCode,
+          storeName: employeeStoreInfo.storeName,
+        },
+        record,
+        outings: record
+          ? typedOutings.filter((outing) => outing.attendance_record_id === record.id)
+          : [],
+      };
+    }),
   };
 }
 

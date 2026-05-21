@@ -162,7 +162,7 @@ export function ClockActionButtons({
         </ActionButton>
         <ActionButton
           size="confirm"
-          onClick={isFinished ? () => dispatch({ type: "showTodayRecords" }) : () => undefined}
+          onClick={() => dispatch({ type: "openDailyStore" })}
         >
           当日打刻確認
         </ActionButton>

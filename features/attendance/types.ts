@@ -26,6 +26,10 @@ export type AttendanceRecord = {
   clockOut?: string;
 };
 
+export type DailyStoreAttendanceRow = AttendanceRecord & {
+  hasRecord: boolean;
+};
+
 export type StampModal = {
   time: string;
   actionLabel: "出勤" | "外出" | "外出戻り" | "退勤";
@@ -33,7 +37,7 @@ export type StampModal = {
   employeeName: string;
 };
 
-export type ViewMode = "clock" | "monthly";
+export type ViewMode = "clock" | "monthly" | "dailyStore";
 
 export type State = {
   employeeCode: string;
@@ -71,5 +75,7 @@ export type Action =
   | { type: "openMonthly"; month: string }
   | { type: "closeMonthly" }
   | { type: "moveMonth"; direction: -1 | 1 }
+  | { type: "openDailyStore" }
+  | { type: "closeDailyStore" }
   | { type: "showTodayRecords" }
   | { type: "closeStampModal" };

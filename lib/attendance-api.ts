@@ -1,4 +1,7 @@
-import type { AttendanceRecord } from "@/features/attendance/types";
+import type {
+  AttendanceRecord,
+  DailyStoreAttendanceRow,
+} from "@/features/attendance/types";
 
 export type PunchActionType = "clockIn" | "goOut" | "returnBack" | "clockOut";
 
@@ -70,6 +73,30 @@ type MonthlyAttendanceResponse = {
       storeName: string;
     };
     records: {
+      record: NonNullable<AttendanceSnapshotResponse["data"]>["record"];
+      outings: NonNullable<AttendanceSnapshotResponse["data"]>["outings"];
+    }[];
+  };
+};
+
+type DailyStoreAttendanceResponse = {
+  ok: boolean;
+  message?: string;
+  data?: {
+    store: {
+      id: string;
+      storeCode: string;
+      storeName: string;
+    };
+    date: string;
+    rows: {
+      employee: {
+        id: string;
+        employeeCode: string;
+        name: string;
+        storeCode: string;
+        storeName: string;
+      };
       record: NonNullable<AttendanceSnapshotResponse["data"]>["record"];
       outings: NonNullable<AttendanceSnapshotResponse["data"]>["outings"];
     }[];
@@ -159,6 +186,28 @@ export async function fetchMonthlyAttendanceApi({
   return body.data;
 }
 
+export async function fetchDailyStoreAttendanceApi({
+  employeeCode,
+  date,
+}: {
+  employeeCode: string;
+  date: string;
+}) {
+  const params = new URLSearchParams({ employeeCode, date, scope: "dailyStore" });
+  const response = await fetch(`/api/attendance?${params.toString()}`);
+  const body = (await response.json().catch(() => null)) as
+    | DailyStoreAttendanceResponse
+    | null;
+
+  if (!response.ok || !body?.ok || !body.data) {
+    throw new AttendanceApiError(
+      body?.message ?? "当日打刻状況の取得に失敗しました。",
+    );
+  }
+
+  return body.data;
+}
+
 export function toAttendanceRecord(data: {
   employee: {
     employeeCode: string;
@@ -197,4 +246,24 @@ export function toAttendanceRecords(data: NonNullable<MonthlyAttendanceResponse[
       }),
     )
     .filter((record): record is AttendanceRecord => Boolean(record));
+}
+
+export function toDailyStoreAttendanceRows(
+  data: NonNullable<DailyStoreAttendanceResponse["data"]>,
+): DailyStoreAttendanceRow[] {
+  return data.rows.map(({ employee, record, outings }) => ({
+    id: `${data.date}-${employee.employeeCode}`,
+    employeeCode: employee.employeeCode,
+    employeeName: employee.name,
+    storeCode: employee.storeCode,
+    storeName: employee.storeName,
+    date: data.date,
+    clockIn: record?.clock_in_at ?? undefined,
+    outings: outings.map((outing) => ({
+      out: outing.out_at ?? undefined,
+      back: outing.back_at ?? undefined,
+    })),
+    clockOut: record?.clock_out_at ?? undefined,
+    hasRecord: Boolean(record),
+  }));
 }

@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useReducer, useState } from "react";
 import { ClockActionButtons } from "@/components/ActionButtons";
 import { ClockPanel } from "@/components/ClockPanel";
+import { DailyStoreAttendanceModal } from "@/components/DailyStoreAttendanceModal";
 import { Keypad } from "@/components/Keypad";
 import { MonthlyAttendanceModal } from "@/components/MonthlyAttendanceModal";
 import { StampCompleteModal } from "@/components/StampModal";
-import { TodayTable } from "@/components/TodayTable";
 import { STORE_NAME } from "@/features/attendance/constants";
 import { dateKey, getWorkedMinutes, monthKey } from "@/features/attendance/date";
 import {
@@ -19,17 +19,22 @@ import {
 import {
   AttendanceApiError,
   fetchAttendanceSnapshotApi,
+  fetchDailyStoreAttendanceApi,
   fetchMonthlyAttendanceApi,
   type PunchActionType,
   punchAttendanceApi,
   toAttendanceRecord,
   toAttendanceRecords,
+  toDailyStoreAttendanceRows,
 } from "@/lib/attendance-api";
+import type { DailyStoreAttendanceRow } from "@/features/attendance/types";
 
 export default function Home() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [now, setNow] = useState(() => new Date());
   const [isSubmittingCode, setIsSubmittingCode] = useState(false);
+  const [dailyStoreRows, setDailyStoreRows] = useState<DailyStoreAttendanceRow[]>([]);
+  const [isDailyStoreLoading, setIsDailyStoreLoading] = useState(false);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
@@ -49,13 +54,7 @@ export default function Home() {
   const isClockScreen = state.isCodeSubmitted && isCodeReady;
   const selectedMonth = state.selectedMonth || monthKey(now);
   const isMonthlyScreen = isClockScreen && state.viewMode === "monthly";
-  const todayRecords = useMemo(
-    () =>
-      state.records.filter(
-        (record) => record.date === today && record.employeeCode === state.employeeCode,
-      ),
-    [state.employeeCode, state.records, today],
-  );
+  const isDailyStoreScreen = isClockScreen && state.viewMode === "dailyStore";
   const monthlyRecords = useMemo(
     () => getMonthlyRecords(state.records, state.employeeCode, selectedMonth),
     [selectedMonth, state.employeeCode, state.records],
@@ -101,6 +100,46 @@ export default function Home() {
       isActive = false;
     };
   }, [isMonthlyScreen, selectedMonth, state.employeeCode]);
+
+  useEffect(() => {
+    if (!isDailyStoreScreen || state.employeeCode.length !== 7) return;
+
+    let isActive = true;
+    async function loadDailyStoreRecords() {
+      setDailyStoreRows([]);
+      setIsDailyStoreLoading(true);
+
+      try {
+        const data = await fetchDailyStoreAttendanceApi({
+          employeeCode: state.employeeCode,
+          date: today,
+        });
+
+        if (!isActive) return;
+        setDailyStoreRows(toDailyStoreAttendanceRows(data));
+      } catch (error) {
+        if (!isActive) return;
+        dispatch({
+          type: "setMessage",
+          message:
+            error instanceof AttendanceApiError
+              ? error.message
+              : "当日打刻状況の取得に失敗しました。",
+        });
+        dispatch({ type: "closeDailyStore" });
+      } finally {
+        if (isActive) {
+          setIsDailyStoreLoading(false);
+        }
+      }
+    }
+
+    void loadDailyStoreRecords();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isDailyStoreScreen, state.employeeCode, today]);
 
   async function handlePunch(actionType: PunchActionType) {
     const at = new Date();
@@ -244,12 +283,6 @@ export default function Home() {
                   </p>
                 ) : null}
               </section>
-
-              <TodayTable
-                records={todayRecords}
-                show={state.showTodayRecords}
-                onShowTodayRecords={() => dispatch({ type: "showTodayRecords" })}
-              />
             </div>
 
             <aside className="flex justify-center lg:justify-end">
@@ -275,6 +308,14 @@ export default function Home() {
           onPreviousMonth={() => dispatch({ type: "moveMonth", direction: -1 })}
           onNextMonth={() => dispatch({ type: "moveMonth", direction: 1 })}
           onClose={() => dispatch({ type: "closeMonthly" })}
+        />
+      ) : null}
+      {isDailyStoreScreen ? (
+        <DailyStoreAttendanceModal
+          date={today}
+          rows={dailyStoreRows}
+          isLoading={isDailyStoreLoading}
+          onClose={() => dispatch({ type: "closeDailyStore" })}
         />
       ) : null}
       {state.stampModal ? (
